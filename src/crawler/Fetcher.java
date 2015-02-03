@@ -21,69 +21,35 @@ import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-public class Fetcher implements Runnable {
+/**
+ * 所有爬虫类的父类，初始化了唯一的url集合和url队列,定义了必要的方法
+ * @author wangjie3
+ *
+ */
+public abstract class Fetcher implements Runnable{
 
 	private static Logger log = Logger.getLogger(Fetcher.class);
 
-	private static BlockingQueue<String> urlToFetch = new LinkedBlockingDeque();
-
-	private static Set<String> urlSet = new HashSet<String>();
+	/**
+	 * 待抓取url队列
+	 */
+	protected static BlockingQueue<String> urlToFetch = new LinkedBlockingDeque();
 
 	/**
-	 * 根据url抓取页面
-	 * 
-	 * @param url
-	 * @return
-	 * @throws IOException
-	 * @throws ClientProtocolException
+	 * 全部url集合
 	 */
-	public JDocument getDocumentFromURL(String url)
-			throws ClientProtocolException, IOException {
-		Document content = null;
-		// 设置GET超时时间
-		HttpParams params = new BasicHttpParams();
-		HttpConnectionParams.setConnectionTimeout(params, 10 * 1000);
-		HttpConnectionParams.setSoTimeout(params, 10 * 1000);
-		AbstractHttpClient httpClient = new DefaultHttpClient(params);
-		// 构造请求
-		HttpGet get = new HttpGet(url);
-		HttpResponse response = httpClient.execute(get);
-		// 先从响应头得到实体
-		HttpEntity entity = response.getEntity();
-		String responeString = EntityUtils.toString(entity, "utf-8");
-		content = Jsoup.parse(responeString);
-		return JDocument.getJDocument(content);
-	}
+	protected static Set<String> urlSet = new HashSet<String>();
 
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-
+	/**
+	 * 初始化待抓取url队列
+	 */
+	static{
 		urlToFetch.offer("http://shop73005687.taobao.com/");
-		while (true) {
-			try {
-				if (urlToFetch.peek() != null) {
-					JDocument document = getDocumentFromURL(urlToFetch.poll());
-					List<String> urls = document.getURL();
-
-					// 避免url重复抓取
-					urls.removeAll(urlSet);
-					for (String url : urls) {
-						if (urlSet.add(url)) {
-							urlToFetch.offer(url);
-							log.info(url);
-						}
-					}
-				}
-			} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
+		log.info("http://shop73005687.taobao.com/");
 	}
-
+	
+	/**
+	 * 爬虫类的主要抓取方法,具体方法逻辑在子类中实现
+	 */
+	protected abstract void fetch();
 }
